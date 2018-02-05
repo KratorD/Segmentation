@@ -18,7 +18,20 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
     public function initialize(Zikula_Form_View $view)
     {
         $properties = ModUtil::apiFunc('Profile', 'user', 'getall');
+
+		// get group items
+		$groups = ModUtil::apiFunc('Groups', 'user', 'getAll');
+		$ugroup[0]['text'] = 'None';
+		$ugroup[0]['value'] = 0;
+		$cont = 1;
+		foreach ($groups as $group){
+			$ugroup[$cont]['text'] = $group['name'];
+			$ugroup[$cont]['value'] = $group['gid'];
+			$cont++;
+		}
+
 		$this->view->assign('properties', $properties);
+		$this->view->assign('groups', $ugroup);
 
         $view->setStateData('returnurl', ModUtil::url('Segmentation', 'admin', 'main'));
 		
@@ -51,6 +64,16 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
         $data = $view->getValues();
 
 		$searchCond=array_filter($data['properties'], "strlen"); //delete empties
+
+		if (empty($data['newName']) && $data['oldName'] == '0'){
+			LogUtil::registerError($this->__('Error! Select an existing group, or enter a new one'));
+			$view->redirect(ModUtil::url('Segmentation', 'admin', 'edit'));
+		}
+		if (!empty($data['newName']) && $data['oldName'] > 0){
+			LogUtil::registerError($this->__('Error! Select an existing group, OR enter a new one'));
+			$view->redirect(ModUtil::url('Segmentation', 'admin', 'edit'));
+		}
+
 		//Prepare SQL
 		// Get database setup
         $dbtable = DBUtil::getTables();
@@ -105,39 +128,45 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
 		foreach($results as $result){
 			$users[] = $result['uid'];
 		}
-		
-		//Create group
-		$check = ModUtil::apiFunc('Groups', 'admin', 'getgidbyname',
-                array('name' => $data['name']));
-		if ($check != false) {
-            // Group already exists
-            LogUtil::registerError($this->__('Error! There is already a group with that name.'));
-			$view->redirect(ModUtil::url('Segmentation', 'admin', 'view'));
-        } else {
-            $gid = ModUtil::apiFunc('Groups', 'admin', 'create',
-                    array('name'  => $data['name'],
-                    'gtype'       => 2, //Private $gtype,
-                    'state'       => 1, //Open $state,
-                    'nbumax'      => 0, //No limit $nbumax,
-                    'description' => $data['name']));
 
-            // The return value of the function is checked here
-            if ($gid != false) {
-                // Success
-                LogUtil::registerStatus($this->__('Done! Created the group.'));
-            }
+		if (!empty($data['newName'])){
+			//Create group
+			$check = ModUtil::apiFunc('Groups', 'admin', 'getgidbyname',
+					array('name' => $data['newName']));
+			if ($check != false) {
+				// Group already exists
+				LogUtil::registerError($this->__('Error! There is already a group with that name.'));
+				$view->redirect(ModUtil::url('Segmentation', 'admin', 'view'));
+			} else {
+				$gid = ModUtil::apiFunc('Groups', 'admin', 'create',
+						array('name'  => $data['newName'],
+						'gtype'       => 2, //Private $gtype,
+						'state'       => 1, //Open $state,
+						'nbumax'      => 0, //No limit $nbumax,
+						'description' => $data['newName']));
+
+				// The return value of the function is checked here
+				if ($gid != false) {
+					// Success
+					LogUtil::registerStatus($this->__('Done! Created the group.'));
+				}
+			}
+		} elseif ($data['oldName'] > 0) {
+			$gid = $data['oldName'];
 		}
 
 		// Add user/s to the group.
         if (is_array($users)) {
             foreach ($users as $id) {
                 if (!ModUtil::apiFunc('Groups', 'admin', 'adduser',
-                array('gid' => $gid,
-                'uid' => $id))) {
+					array('gid' => $gid,
+						'uid' => $id))) {
                     // Failure
-                    LogUtil::registerError($this->__('Error! A problem occurred and the user was not added to the group.'));
+                    return LogUtil::registerError($this->__('Error! A problem occurred and the user was not added to the group.'));
                 }
             }
+			// Success
+			LogUtil::registerStatus($this->__('Done! The user was added to the group.'));
         } else {
             if (ModUtil::apiFunc('Groups', 'admin', 'adduser',
             array('gid' => $gid,

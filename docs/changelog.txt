@@ -1,0 +1,5 @@
+# v1.1.0
+- Now, you can create o select an existing group
+- Send an email to the group that you are created!
+
+# v1.0.0 Initial version

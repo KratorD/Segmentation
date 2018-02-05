@@ -34,6 +34,13 @@ class Segmentation_Api_Admin extends Zikula_AbstractApi
                 'class' => 'z-icon-es-new');
         }
 
+		if (SecurityUtil::checkPermission('Segmentation::', '::', ACCESS_ADMIN)) {
+            $links[] = array(
+                'url' => ModUtil::url('Segmentation', 'admin', 'sendEmailGroup'),
+                'text' => $this->__('Send Email to Group'),
+                'class' => 'z-icon-es-mail');
+        }
+
         return $links;
     }
 }

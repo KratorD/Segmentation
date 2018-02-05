@@ -25,7 +25,10 @@ class Segmentation_Installer extends Zikula_AbstractInstaller
      */
     function install()
     {
-        // Initialization successful
+        //Hooks
+		HookUtil::registerSubscriberBundles($this->version->getHookSubscriberBundles());
+
+		// Initialization successful
         return true;
     }
 
@@ -47,6 +50,9 @@ class Segmentation_Installer extends Zikula_AbstractInstaller
             case '1.0.0':
                 // Upgrade 1.0.0 -> ?.?.?
 
+			case '1.1.0':
+				HookUtil::registerSubscriberBundles($this->version->getHookSubscriberBundles());
+
                 // The following break should be the only one in the switch, and should appear immediately prior to the default case.
                 break;
             default:
@@ -65,7 +71,9 @@ class Segmentation_Installer extends Zikula_AbstractInstaller
      */
     function uninstall()
     {
-        // Deletion successful
+        HookUtil::unregisterSubscriberBundles($this->version->getHookSubscriberBundles());
+
+		// Deletion successful
         return true;
     }
 }

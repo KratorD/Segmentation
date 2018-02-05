@@ -24,27 +24,43 @@ class Segmentation_Version extends Zikula_AbstractVersion
      */
     public function getMetaData()
     {
-        return array(
-            'displayname' => $this->__('Segmentation'),
-            'description' => $this->__('Create user groups using attributes'),
-            //! module name that appears in URL
-            'url' => 'Segmentation', //$this->__(/*!used in URL - nospaces, no special chars, lcase*/),
-            'version' => '1.0.0',
-            'core_min' => '1.3.0', // Fixed to 1.3.x range
-            'core_max' => '1.4.99', // Fixed to 1.3.x range
-			'dependencies' => array(
-				array('modname'    => 'Profile',
-					'minversion' => '1.5.0',
+        $meta = array();
+        $meta['displayname'] = $this->__('Segmentation');
+        $meta['url'] = $this->__('Segmentation');
+        $meta['description'] = $this->__('Create user groups for attributes');
+        $meta['version'] = '1.1.0';
+		$meta['author'] = 'KratorD';
+		$meta['contact'] = 'http://www.torredemarfil.es';
+
+        $meta['securityschema'] = array(
+            'Segmentation::' => '::');
+		$meta['capabilities'] = array(HookUtil::SUBSCRIBER_CAPABLE => array('enabled' => true));
+		$meta['core_min'] = '1.3.0'; // requires minimum 1.3.3 or later
+        $meta['core_max'] = '1.4.99';
+		// Module depedencies
+        $meta['dependencies'] = array(
+            array(  'modname'    => 'Profile',
+                    'minversion' => '1.5.0',
 					'maxversion' => '1.6.2',
 					'status'     => ModUtil::DEPENDENCY_REQUIRED),
-				array('modname'    => 'Groups',
-					'minversion' => '',
+			array(  'modname'    => 'Groups',
+                    'minversion' => '',
 					'maxversion' => '',
-					'status'     => ModUtil::DEPENDENCY_REQUIRED)
-			),
-            'securityschema' => array(
-                $this->name . '::' => '::',
-            ),
-        );
+					'status'     => ModUtil::DEPENDENCY_REQUIRED),
+		);
+
+        return $meta;
+    }
+
+	protected function setupHookBundles()
+    {
+        $bundle = new Zikula_HookManager_SubscriberBundle($this->name, 'subscriber.segmentation.ui_hooks.segmentation', 'ui_hooks', $this->__('Segmentation Hooks'));
+        $bundle->addEvent('display_view', 'segmentation.ui_hooks.segmentation.display_view');
+		$bundle->addEvent('form_edit', 'segmentation.ui_hooks.segmentation.form_edit');
+        $this->registerHookSubscriberBundle($bundle);
+
+        $bundle = new Zikula_HookManager_SubscriberBundle($this->name, 'subscriber.segmentation.filter_hooks.segmentation', 'filter_hooks', $this->__('Segmentation filter Hooks'));
+        $bundle->addEvent('filter', 'segmentation.filter_hooks.segmentation.filter');
+        $this->registerHookSubscriberBundle($bundle);
     }
 }

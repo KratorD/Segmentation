@@ -12,8 +12,12 @@
         {formvalidationsummary}
 
         <div class="z-formrow">
-            {formlabel mandatorysym=true for="name" __text="Group Name"}
-            {formtextinput id="name" mandatory=true maxLength=255}
+            {formlabel for="newName" __text="New Group Name"}
+            {formtextinput id="newName" maxLength=255}
+        </div>
+		<div class="z-formrow">
+            {formlabel for="oldName" __text="or Select Group"}
+			{formdropdownlist id='oldName' items=$groups}
         </div>
 
         <div class="z-formrow">

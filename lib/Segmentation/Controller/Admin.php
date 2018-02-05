@@ -42,4 +42,53 @@ class Segmentation_Controller_Admin extends Zikula_AbstractController
         return $form->execute('admin/edit.tpl', new Segmentation_Form_Handler_Admin_Edit());
     }
 
+	/**
+     * Create an email and send it.
+     *
+     * @return string|boolean Output.
+     */
+    public function sendEmailGroup()
+    {
+        // Security check
+        if (!SecurityUtil::checkPermission('Segmentation::', '::', ACCESS_ADMIN)) {
+            throw new Zikula_Exception_Forbidden();
+        }
+
+		if ($this->request->isPost()) {
+			//List of users for id
+			$value = $this->request->request->get('ugroup', null);
+			$uidList = UserUtil::getUsersForGroup($value);
+
+			//Email data (subject, email body...)
+			$sendmail = $this->request->request->get('sendmail', null);
+
+			//Get data about users
+			$findUsersArgs = array('ugroup' => $this->request->request->get('ugroup', null));
+			$userList = ModUtil::apiFunc('Users', 'admin', 'findUsers', $findUsersArgs);
+			foreach($userList as $user){
+				$recipientsname[$user['uid']] = $user['uname'];
+				$recipientsemail[$user['uid']] = $user['email'];
+			}
+			$sendmail['recipientsname'] = $recipientsname;
+			$sendmail['recipientsemail'] = $recipientsemail;
+
+			$mailSent = ModUtil::apiFunc('Users', 'admin', 'sendmail', array(
+                'uid'       => $uidList,
+                'sendmail'  => $sendmail,
+            ));
+
+			$this->redirect(ModUtil::url($this->name, 'admin', 'main'));
+		} elseif (!$this->request->isGet()) {
+            throw new Zikula_Exception_Forbidden();
+        }
+
+		if ($this->request->isGet()){
+			// get group items
+			$groups = ModUtil::apiFunc('Groups', 'user', 'getAll');
+
+			return $this->view->assign('groups', $groups)
+				->fetch('admin/send_email_group.tpl');
+		}
+
+    }
 }
