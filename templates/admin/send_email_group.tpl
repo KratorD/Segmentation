@@ -41,6 +41,15 @@
                 <textarea id="users_message" name="sendmail[message]" cols="50" rows="10"></textarea>
             </div>
             <div class="z-formrow">
+                <label for="mail_template">{gt text="Email Templates"}</label>
+                <select id="mail_template" name="cmbTemplate">
+                    <option value="0" selected="selected">&nbsp;</option>
+					{section name=template loop=$templates}
+                    <option value="{$templates[template].id}">{$templates[template].codEmail}</option>
+                    {/section}
+                </select>
+            </div>
+			<div class="z-formrow">
                 <label for="batchsize">{gt text="Send e-mail messages in batches"}</label>
                 <span>
                     <input name="sendmail[batchsize]" type="text" id="batchsize" value="100" size="5" />

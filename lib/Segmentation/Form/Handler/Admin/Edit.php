@@ -9,6 +9,15 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
 {
 
     /**
+     * segmentation id.
+     *
+     * When set this handler is in edit mode.
+     *
+     * @var integer
+     */
+    private $id;
+
+    /**
      * Setup form.
      *
      * @param Zikula_Form_View $view Current Zikula_Form_View instance.
@@ -17,7 +26,8 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
      */
     public function initialize(Zikula_Form_View $view)
     {
-        $properties = ModUtil::apiFunc('Profile', 'user', 'getall');
+
+		$properties = ModUtil::apiFunc('Profile', 'user', 'getall');
 
 		// get group items
 		$groups = ModUtil::apiFunc('Groups', 'user', 'getAll');
@@ -158,7 +168,7 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
 		// Add user/s to the group.
         if (is_array($users)) {
             foreach ($users as $id) {
-                if (!ModUtil::apiFunc('Groups', 'admin', 'adduser',
+                if (!ModUtil::apiFunc('Groups', 'admin', 'adduser', 
 					array('gid' => $gid,
 						'uid' => $id))) {
                     // Failure

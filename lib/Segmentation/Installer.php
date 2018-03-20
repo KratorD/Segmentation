@@ -25,9 +25,20 @@ class Segmentation_Installer extends Zikula_AbstractInstaller
      */
     function install()
     {
-        //Hooks
-		HookUtil::registerSubscriberBundles($this->version->getHookSubscriberBundles());
+		// create tables
+        try {
+            DoctrineHelper::createSchema($this->entityManager, array('Segmentation_Entity_Email'));
+        } catch (Exception $e) {
+            LogUtil::registerError($this->__f('Error! Could not create tables (%s).', $e->getMessage()));
+            return false;
+        }
 
+		//Variables
+		$this->setVar('perpage', '20');
+
+		//Hooks
+		HookUtil::registerSubscriberBundles($this->version->getHookSubscriberBundles());
+		
 		// Initialization successful
         return true;
     }
@@ -48,14 +59,24 @@ class Segmentation_Installer extends Zikula_AbstractInstaller
         switch ($oldVersion)
         {
             case '1.0.0':
-                // Upgrade 1.0.0 -> ?.?.?
-
-			case '1.1.0':
+                // Upgrade 1.0.0 -> 1.1.0
 				HookUtil::registerSubscriberBundles($this->version->getHookSubscriberBundles());
 
-                // The following break should be the only one in the switch, and should appear immediately prior to the default case.
+            case '1.1.0':
+				try {
+					DoctrineHelper::updateSchema($this->entityManager, array('Segmentation_Entity_Email'));
+				} catch (\Exception $e) {
+					if (System::isDevelopmentMode()) {
+						return LogUtil::registerError($this->__('Doctrine Exception: ') . $e->getMessage());
+					}
+
+					LogUtil::registerStatus($e->getMessage());
+                    return false;
+				}
+				// The following break should be the only one in the switch, and should appear immediately prior to the default case.
                 break;
-            default:
+
+			default:
                 $this->registerError($this->__f('Upgrading the Segmentation module from version %1$s to %2$s is not supported.', array($oldVersion, $this->version->getVersion())));
                 return $oldVersion;
         }
@@ -71,9 +92,11 @@ class Segmentation_Installer extends Zikula_AbstractInstaller
      */
     function uninstall()
     {
-        HookUtil::unregisterSubscriberBundles($this->version->getHookSubscriberBundles());
+        DoctrineHelper::dropSchema($this->entityManager, array('Segmentation_Entity_Email'));
+		$this->delVars();
+		HookUtil::unregisterSubscriberBundles($this->version->getHookSubscriberBundles());
 
-		// Deletion successful
+        // Deletion successful
         return true;
     }
 }

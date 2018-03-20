@@ -20,7 +20,7 @@ class Segmentation_Controller_Admin extends Zikula_AbstractController
     /**
      * The main administration entry point.
      *
-     * Redirects to the {@link modifyConfig()} function.
+     * Redirects to the {@link edit()} function.
      *
      * @return void
      */
@@ -29,8 +29,61 @@ class Segmentation_Controller_Admin extends Zikula_AbstractController
         $this->redirect(ModUtil::url($this->name, 'admin', 'edit'));
     }
 
+	public function view()
+	{
+		// Security check
+        if (!SecurityUtil::checkPermission('Segmentation::', '::', ACCESS_ADMIN)) {
+            throw new Zikula_Exception_Forbidden();
+        }
+
+		// initialize sort array - used to display sort classes and urls
+        $sort = array();
+        $fields = array('codEmail', 'description'); // possible sort fields
+        foreach ($fields as $field) {
+            $sort['class'][$field] = 'z-order-unsorted'; // default values
+        }
+
+        // Get parameters from whatever input we need.
+        $startnum = (int)$this->request->query->get('startnum', $this->request->request->get('startnum', isset($args['startnum']) ? $args['startnum'] : null));
+        $orderby = $this->request->query->get('orderby', $this->request->request->get('orderby', isset($args['orderby']) ? $args['orderby'] : 'codEmail'));
+        $original_sdir = $this->request->query->get('sdir', $this->request->request->get('sdir', isset($args['sdir']) ? $args['sdir'] : 0));
+
+		$this->view->assign('startnum', $startnum);
+        $this->view->assign('orderby', $orderby);
+        $this->view->assign('sdir', $original_sdir);
+        $this->view->assign('rowcount', ModUtil::apiFunc('Segmentation', 'user', 'countQuery'));
+
+		$sdir = $original_sdir ? 0 : 1; //if true change to false, if false change to true
+        // change class for selected 'orderby' field to asc/desc
+        if ($sdir == 0) {
+            $sort['class'][$orderby] = 'z-order-desc';
+            $orderdir = 'DESC';
+        }
+        if ($sdir == 1) {
+            $sort['class'][$orderby] = 'z-order-asc';
+            $orderdir = 'ASC';
+        }
+        // complete initialization of sort array, adding urls
+        foreach ($fields as $field) {
+            $sort['url'][$field] = ModUtil::url('Segmentation', 'admin', 'view', array(
+                        'orderby' => $field,
+                        'sdir' => $sdir));
+        }
+        $this->view->assign('sort', $sort);
+
+		$mails = ModUtil::apiFunc('Segmentation', 'user', 'getall', array(
+                    'startnum' => $startnum,
+                    'orderby' => $orderby,
+                    'orderdir' => $orderdir
+                ));
+
+        return $this->view->assign('mails', $mails)
+                          ->fetch('admin/view.tpl');
+
+	}
+
 	/**
-     * Create or edit record.
+     * Create or edit segmentation.
      *
      * @return string|boolean Output.
      */
@@ -40,6 +93,19 @@ class Segmentation_Controller_Admin extends Zikula_AbstractController
 
         $form = FormUtil::newForm('Segmentation', $this);
         return $form->execute('admin/edit.tpl', new Segmentation_Form_Handler_Admin_Edit());
+    }
+
+	/**
+     * Create or edit email.
+     *
+     * @return string|boolean Output.
+     */
+    public function editMail()
+    {
+        $this->throwForbiddenUnless(SecurityUtil::checkPermission('Segmentation::', '::', ACCESS_ADD), LogUtil::getErrorMsgPermission());
+
+        $form = FormUtil::newForm('Segmentation', $this);
+        return $form->execute('admin/editMail.tpl', new Segmentation_Form_Handler_Admin_EditMail());
     }
 
 	/**
@@ -61,6 +127,13 @@ class Segmentation_Controller_Admin extends Zikula_AbstractController
 
 			//Email data (subject, email body...)
 			$sendmail = $this->request->request->get('sendmail', null);
+
+			//Email templates
+			$cmbTemplate = $this->request->request->get('cmbTemplate', null);
+			if ($cmbTemplate <> 0){
+				$mailTpl = $this->entityManager->getRepository('Segmentation_Entity_Email')->find($cmbTemplate);
+				$sendmail['message'] = $mailTpl['body'];
+			}
 
 			//Get data about users
 			$findUsersArgs = array('ugroup' => $this->request->request->get('ugroup', null));
@@ -86,9 +159,14 @@ class Segmentation_Controller_Admin extends Zikula_AbstractController
 			// get group items
 			$groups = ModUtil::apiFunc('Groups', 'user', 'getAll');
 
+			// get email templates items
+			$templates = ModUtil::apiFunc('Segmentation', 'user', 'getall');
+
 			return $this->view->assign('groups', $groups)
+				->assign('templates', $templates)
 				->fetch('admin/send_email_group.tpl');
 		}
 
     }
+
 }

@@ -27,8 +27,8 @@ class Segmentation_Version extends Zikula_AbstractVersion
         $meta = array();
         $meta['displayname'] = $this->__('Segmentation');
         $meta['url'] = $this->__('Segmentation');
-        $meta['description'] = $this->__('Create user groups for attributes');
-        $meta['version'] = '1.1.0';
+        $meta['description'] = $this->__('Create user groups for attributes and send emails');
+        $meta['version'] = '1.2.0';
 		$meta['author'] = 'KratorD';
 		$meta['contact'] = 'http://www.torredemarfil.es';
 
@@ -50,6 +50,7 @@ class Segmentation_Version extends Zikula_AbstractVersion
 		);
 
         return $meta;
+		
     }
 
 	protected function setupHookBundles()
