@@ -139,6 +139,10 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
 			$users[] = $result['uid'];
 		}
 
+		if (count($users) == 0){
+			return LogUtil::registerError($this->__('No data found.'));
+		}
+
 		if (!empty($data['newName'])){
 			//Create group
 			$check = ModUtil::apiFunc('Groups', 'admin', 'getgidbyname',
@@ -167,7 +171,14 @@ class Segmentation_Form_Handler_Admin_Edit extends Zikula_Form_AbstractHandler
 
 		// Add user/s to the group.
         if (is_array($users)) {
-            foreach ($users as $id) {
+            // remove all memberships of this group
+			$groupmembership_result = DBUtil::deleteObjectByID('group_membership', $gid, 'gid');
+			// Check for an error with the database code
+			if (!$groupmembership_result) {
+				LogUtil::registerError($this->__('Error! Could not perform the deletion.'));
+			}
+
+			foreach ($users as $id) {
                 if (!ModUtil::apiFunc('Groups', 'admin', 'adduser', 
 					array('gid' => $gid,
 						'uid' => $id))) {

@@ -1,3 +1,7 @@
+# v1.2.1
+- The group will be emptied before of add users
+- If no user is found, a specific error message is displayed
+
 # v1.2.0
 - You can create templates for your emails and send it!
 
